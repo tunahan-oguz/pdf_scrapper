@@ -28,7 +28,7 @@ def draw_bounding_rects_on_pdf(input_pdf_path, output_pdf_path):
     pdf_document.save(output_pdf_path)
 
 # Define the input and output PDF file paths
-input_pdf_path = "/home/oguz/Desktop/BIL471/anatomybooks/1.pdf"
+input_pdf_path = "/home/oguz/Desktop/BIL471/project/anatomybooks/4.pdf"
 output_pdf_path = "output_with_bounding_rects.pdf"
 
 # Draw bounding rectangles on the PDF
