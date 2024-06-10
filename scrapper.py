@@ -5,13 +5,16 @@ import pandas as pd
 import os
 from rich.progress import Progress
 import tqdm
+import re 
 
 IMAGE_ROOT = "dataset/images"
 DESC_ROOT = "dataset/descriptions"
-KWD = "Figure"
-pdf_path = "/home/oguz/Desktop/BIL471/project/anatomybooks/7.pdf"
-jump = 13
-stop = 140
+KWD = "Fig."
+PATTERN = r'Fig\. \d+\.\d+'
+
+pdf_path = r"C:\Users\kaang\OneDrive\Documents\pdf_scrapper\4.pdf"
+jump = 23
+stop = 554
 
 def extract_images_and_descriptions(pdf_path, start, stop):
     global IMAGE_ROOT
@@ -24,7 +27,6 @@ def extract_images_and_descriptions(pdf_path, start, stop):
     for page_number in tqdm.tqdm(range(start, stop)):
         page = pdf_document.load_page(page_number)
         images = page.get_images(full=True)
-        
         for image_index, img in enumerate(images):
             xref = img[0]
             base_image = pdf_document.extract_image(xref)
@@ -63,6 +65,21 @@ def extract_images_and_descriptions(pdf_path, start, stop):
                         if distance < min_distance:
                             min_distance = distance
                             caption_text = block[4]
+                        #REMOVE THE LINES AFTER HERE TO RUN THE ORIGINAL SCRIPT.
+                        fig_loc = re.search(PATTERN,caption_text)
+                        if fig_loc:
+                            fig_name = fig_loc.group()
+                        else:
+                            print('No figure reference found.')
+                        fig_name = '(' + fig_name + ')'                        
+                        for sub_block in text_blocks:
+                            if caption_text == sub_block[4]:
+                                continue
+                            if fig_name in sub_block[4]:
+                                print(sub_block[4])
+                                caption_text = caption_text + " " + sub_block[4]
+                        ####  
+                            
                 
                     # Store image path and corresponding caption text
                     image_data.append((image_file_path, caption_text.strip()))
