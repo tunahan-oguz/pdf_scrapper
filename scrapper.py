@@ -6,6 +6,7 @@ import os
 import tqdm
 from utils import *
 import glob
+import post_process_texts
 
 pdfs = glob.glob("/home/oguz/Desktop/BIL471/project/anatomybooks/*.pdf")
 
@@ -71,7 +72,7 @@ def extract_images_and_descriptions(pdf_path):
                     image.save(image_file_path)
                     image_data.append(instance)
                 except Exception as e:
-                    print(f"Error processing image on page {page_number+1}: {e.with_traceback()}")
+                    print(f"Error processing image on page {page_number+1}: {e}")
     return image_data
 
 if __name__ == "__main__":
@@ -82,3 +83,4 @@ if __name__ == "__main__":
         os.makedirs(DESC_ROOT, exist_ok=True)
         df.to_csv(f"{DESC_ROOT}/image_descriptions{os.path.basename(pdf_path)}.csv", index=False)
         # df.to_json(f"{DESC_ROOT}/image_descriptions{os.path.basename(pdf_path)}.json", orient="records")
+    post_process_texts.main()
