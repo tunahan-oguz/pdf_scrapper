@@ -1,0 +1,75 @@
+arch: VSE
+
+model:
+  embed_size: 1024
+  finetune: true
+  cnn_type: 'vgg19'
+  use_abs: false
+  no_imgnorm: false
+  word_dim: 1024
+  num_layers: 1
+
+training:
+  batch_size: 12
+  num_workers: 6
+  lr: 1e-4
+  epoch: 100
+
+paths:
+  dataset_root: "dataset/descriptions"
+  vocab_path: "vocab/simple_vocab.pkl"
+
+wandb:
+  project: "NLP_PROJECT"
+
+
+
+# from train.dataset import AnatomDataset
+# import pickle
+# from train.image_transform import IMAGE_TRANSFORMS
+# import torch.utils.data as data
+# from torch.optim import AdamW
+# from train.vocab import *
+# from train.loss import ContrastiveLoss
+# from train.model.VSE import VSE
+# import wandb
+
+# with open("vocab/simple_vocab.pkl", 'rb') as f:
+#     vocab = pickle.load(f)
+# model_params = {
+#     "embed_size": 1024,
+#     "finetune": True,
+#     "cnn_type": 'vgg19',
+#     "use_abs": False,
+#     "no_imgnorm": False,
+#     "vocab_size": len(vocab),
+#     "word_dim": 1024,
+#     "num_layers":1
+# }
+
+# BATCH_SIZE = 12
+# NUM_WORKERS = 6
+# LR = 1e-4
+
+
+# model = VSE(**model_params)
+# optim = AdamW(model.parameters(), lr=LR)
+# criterion = ContrastiveLoss()
+# train_dataset = AnatomDataset(root="dataset/descriptions", split="train", vocab=vocab, transform=IMAGE_TRANSFORMS)
+# valid_dataset = AnatomDataset(root="dataset/descriptions", split="valid", vocab=vocab, transform=IMAGE_TRANSFORMS)
+# test_dataset = AnatomDataset(root="dataset/descriptions", split="test", vocab=vocab, transform=IMAGE_TRANSFORMS)
+
+# train_dataloader = data.DataLoader(dataset=train_dataset, batch_size=12, collate_fn=AnatomDataset.collate_fn,
+#                             num_workers=NUM_WORKERS, pin_memory=True, drop_last=False, shuffle=True)
+# valid__dataloader = data.DataLoader(dataset=valid_dataset, batch_size=12, collate_fn=AnatomDataset.collate_fn,
+#                             num_workers=NUM_WORKERS, pin_memory=True, drop_last=False, shuffle=False)
+
+# test_dataloader = data.DataLoader(dataset=test_dataset, batch_size=12, collate_fn=AnatomDataset.collate_fn,
+#                             num_workers=NUM_WORKERS, pin_memory=True, drop_last=False, shuffle=False)
+
+# logger = wandb.init(
+#     project="PDF_RESEARCHER",
+#     run="PDF_RESEARCHER",
+#     entity="NLP_PROJECT",
+    
+#     )

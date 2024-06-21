@@ -7,7 +7,9 @@ import tqdm
 from utils import *
 import glob
 import post_process_texts
+import train.vocab
 
+#CHANGE THE PATH
 pdfs = glob.glob("/home/oguz/Desktop/BIL471/project/anatomybooks/*.pdf")
 
 def extract_images_and_descriptions(pdf_path):
@@ -84,3 +86,4 @@ if __name__ == "__main__":
         df.to_csv(f"{DESC_ROOT}/image_descriptions{os.path.basename(pdf_path)}.csv", index=False)
         # df.to_json(f"{DESC_ROOT}/image_descriptions{os.path.basename(pdf_path)}.json", orient="records")
     post_process_texts.main()
+    train.vocab.main('dataset/descriptions', 'simple')

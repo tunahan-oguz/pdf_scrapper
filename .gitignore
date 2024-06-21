@@ -99,3 +99,6 @@ dataset/
 data/
 *.pdf
 vocab/
+run/
+wandb/
+outputs/
