@@ -17,7 +17,7 @@ training:
 
 paths:
   dataset_root: "dataset/descriptions"
-  vocab_path: "vocab/simple_vocab.pkl"
+  vocab_path: "object/simple_vocab.pkl"
 
 wandb:
   project: "NLP_PROJECT"

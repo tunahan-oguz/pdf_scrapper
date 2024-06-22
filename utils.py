@@ -46,6 +46,10 @@ def ninedotpdf(x):
 def figdot(image_kwd : str):
     return image_kwd.lower().replace("figure", "fig.")
 
+def figdottofigure(image_kwd : str):
+    return image_kwd.lower().replace("fig.", "figure")
+
+
 FIGURE_TO_REF_FORMATS = {
     "1.pdf" : same,
     "2.pdf" : same,
@@ -60,5 +64,13 @@ FIGURE_TO_REF_FORMATS = {
     "11.pdf" : figdot,
     "12.pdf" : same,
     "13.pdf" : figdot,
+    "14.pdf" : same,
+    "15.pdf" : figdottofigure,
+    "16.pdf" : same,
+    "17.pdf" : same,
+    "18.pdf" : same,
+    "19.pdf" : None,
+    "20.pdf" : same,
+    "21.pdf" : figdot,
 
 }

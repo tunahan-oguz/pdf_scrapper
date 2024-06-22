@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import nltk
 import pickle
-from train.vocab import Vocabulary
+from train.embed.vocab import Vocabulary
 from train.image_transform import IMAGE_TRANSFORMS
 
 class AnatomDataset(data.Dataset):

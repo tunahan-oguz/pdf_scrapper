@@ -102,3 +102,6 @@ vocab/
 run/
 wandb/
 outputs/
+*.png
+*.jpg
+object/

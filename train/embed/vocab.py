@@ -9,7 +9,7 @@ import os
 
 class Vocabulary(object):
     """Simple vocabulary wrapper."""
-
+    # TODO ADD THE WORDS IN REFS TOO
     def __init__(self):
         self.word2idx = {}
         self.idx2word = {}

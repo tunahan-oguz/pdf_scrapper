@@ -7,10 +7,10 @@ import tqdm
 from utils import *
 import glob
 import post_process_texts
-import train.vocab
+import train.embed as embed
 
 #CHANGE THE PATH
-pdfs = glob.glob("/home/oguz/Desktop/BIL471/project/anatomybooks/*.pdf")
+pdfs = glob.glob("./*.pdf")
 
 def extract_images_and_descriptions(pdf_path):
     global IMAGE_ROOT
@@ -31,7 +31,7 @@ def extract_images_and_descriptions(pdf_path):
             image_bytes = base_image["image"]
             image_ext = base_image["ext"]
             
-            if base_image["width"] > 50 and base_image["height"] > 50:
+            if base_image["width"] > 160 and base_image["height"] > 160:
                 try:
                     image = Image.open(io.BytesIO(image_bytes))
                     
@@ -86,4 +86,4 @@ if __name__ == "__main__":
         df.to_csv(f"{DESC_ROOT}/image_descriptions{os.path.basename(pdf_path)}.csv", index=False)
         # df.to_json(f"{DESC_ROOT}/image_descriptions{os.path.basename(pdf_path)}.json", orient="records")
     post_process_texts.main()
-    train.vocab.main('dataset/descriptions', 'simple')
+    # embed.vocab.main('dataset/descriptions', 'simple')
