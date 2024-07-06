@@ -105,3 +105,6 @@ outputs/
 *.png
 *.jpg
 object/
+*.xlsx
+grades.ipynb
+*.epub

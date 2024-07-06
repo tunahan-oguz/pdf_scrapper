@@ -47,6 +47,11 @@ def lemmatize_text(text):
     lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
     return ' '.join(lemmatized_tokens)
 
+def alpha_numeric(x):
+    x = re.sub(r'\(.\)',' ', x )
+    x = re.sub(r'[^\w]', " ",x)
+    return x
+
 
 def main():
     description_csvs = [os.path.join(DESC_ROOT, f) for f in os.listdir(DESC_ROOT) if f.endswith("csv")]
@@ -71,6 +76,7 @@ def main():
         # TODO remove all punctuations
         
         df['Description'] = df['Description'].replace('', np.nan)
+        df['Description_Alphanumeric'] = df['Description'].apply(alpha_numeric)
         df['Cleaned_Description'] = df['Description'].apply(clean_text)
         df['Lemmatized_Description'] = df['Cleaned_Description'].apply(lemmatize_text)
         df['Stemmed_Description'] = df['Cleaned_Description'].apply(stem_text)
