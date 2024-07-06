@@ -50,6 +50,7 @@ def lemmatize_text(text):
 def alpha_numeric(x):
     x = re.sub(r'\(.\)',' ', x )
     x = re.sub(r'[^\w]', " ",x)
+    x = re.sub(r'¬',' ',x) #DENEMEDIM
     return x
 
 
