@@ -1,5 +1,7 @@
 arch: VSE
 
+sim_measure: 'cosine'
+
 model:
   embed_size: 1024
   finetune: true
@@ -22,6 +24,7 @@ paths:
 wandb:
   project: "NLP_PROJECT"
 
+log_step: 5
 
 
 # from train.dataset import AnatomDataset

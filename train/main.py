@@ -11,7 +11,8 @@ from train.dataset import AnatomDataset
 from train.image_transform import IMAGE_TRANSFORMS
 from train.loss import ContrastiveLoss
 from train.model.VSE import VSE
-from train.vocab import Vocabulary
+from train.embed.vocab import Vocabulary
+import train.eval as eval
 import tqdm
 import numpy as np
 import torch
@@ -22,9 +23,13 @@ __arch__ = {
 }
 __rundir__ = "./run"
 
-min_loss = np.float32('inf')
+cfg = None
+
+max_r1 = np.float32('inf') * -1
 
 def train_one(model, loader, criterion, optim, scheduler, logger):
+    global cfg
+
     model = model.cuda()
     model.train()
     accumulated_loss = 0
@@ -41,48 +46,68 @@ def train_one(model, loader, criterion, optim, scheduler, logger):
         optim.step()
         accumulated_loss += loss.item()
  
-        if step % 15 == 0:
+        if step % cfg.log_step == 0:
             logger.log({
-                f"loss": accumulated_loss / 50
+                "train":
+                {
+                    f"loss": accumulated_loss / cfg.log_step,
+                    f"learning_rate" : scheduler.get_last_lr()[0]
+                }
             })
             accumulated_loss = 0
-        logger.log({
-            f"learning_rate" : scheduler.get_last_lr()[0]
-        })
+    model.zero_grad()
+    optim.zero_grad()
     scheduler.step()
 
     
-def validate(model, loader, criterion):
-
+def validate(model, loader, logger, measure='cosine'):
     model.eval()
-    total_loss = 0
-    for im, text, lens in tqdm.tqdm(loader):
-        im = im.cuda(); text = text.cuda()
-        with torch.no_grad():
-            outs = model(im, text, lens)
-            loss = criterion(*outs) # contrastive
-            total_loss += loss.item()
-    model_selection(model, total_loss)
+    
+    img_embs, cap_embs = eval.encode_data(model, loader, log_step=10)
+    (r1, r5, r10, medr, meanr) = eval.i2t(img_embs, cap_embs, measure=measure)
+    (r1i, r5i, r10i, medri, meanri) = eval.t2i(img_embs, cap_embs, measure=measure)
+
+    logger.log({
+        "validation":
+        {
+            f"i2t-Recall@1": r1,
+            f"i2t-Recall@5": r5,
+            f"i2t-Recall@10": r10,
+        }
+    })
+    logger.log({
+        "validation":
+        { 
+            f"t2i-Recall@1": r1i,
+            f"t2i-Recall@5": r5i,
+            f"t2i-Recall@10": r10i,
+        }    
+})
+
+    model_selection(model, r1)
 
 
-def model_selection(model : torch.nn.Module, total_loss):
-    global min_loss
-    if total_loss < min_loss:
+def model_selection(model : torch.nn.Module, r1):
+    global max_r1
+    if max_r1 < r1:
         torch.save(model.state_dict(), os.path.join(__rundir__, wandb.run.name, "best.pth"))
-        min_loss = total_loss
+        max_r1 = r1
         print(f"Best model saved to {os.path.join(__rundir__, wandb.run.name)}")
 
 def loop(epochs, model, train_loader, criterion, optim, scheduler, logger, val_loader):
+    global cfg
     for e in range(epochs):
         print(f"[TRAIN: {e}]")
         train_one(model, train_loader, criterion, optim, scheduler, logger)
         print(f"[VAL: {e}]")
-        validate(model, val_loader, criterion)
+        validate(model, val_loader, logger, measure=cfg.sim_measure)
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="vse")
 def main(config: DictConfig):
     global __rundir__
+    global cfg
+    cfg = config
     # Load vocabulary
     vocab_path = to_absolute_path(config.paths.vocab_path)
     with open(vocab_path, 'rb') as f:

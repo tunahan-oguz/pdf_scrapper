@@ -7,10 +7,10 @@ import tqdm
 from utils import *
 import glob
 import post_process_texts
-import train.embed as embed
+from train.embed import vocab
 
 #CHANGE THE PATH
-pdfs = glob.glob("./*.pdf")
+pdfs = glob.glob("/home/oguz/Desktop/BIL471/project/anatomybooks/*.pdf")
 
 def extract_images_and_descriptions(pdf_path):
     global IMAGE_ROOT
@@ -86,4 +86,5 @@ if __name__ == "__main__":
         df.to_csv(f"{DESC_ROOT}/image_descriptions{os.path.basename(pdf_path)}.csv", index=False)
         # df.to_json(f"{DESC_ROOT}/image_descriptions{os.path.basename(pdf_path)}.json", orient="records")
     post_process_texts.main()
-    # embed.vocab.main('dataset/descriptions', 'simple')
+    vocab.main('dataset/descriptions', 'simple')
+    vocab.main('dataset/descriptions', 'with_refs')
