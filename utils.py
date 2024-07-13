@@ -72,5 +72,5 @@ FIGURE_TO_REF_FORMATS = {
     "19.pdf" : None,
     "20.pdf" : same,
     "21.pdf" : figdot,
-
+    "22.pdf" : figdot, #INVERSE CALISTIRMAK GEREKIYOR, BROKEN DATA STREAM WHEN WRITING IMAGE FILE ERROR ATIYOR COGU IMAGEDA
 }

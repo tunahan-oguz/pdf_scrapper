@@ -108,3 +108,5 @@ object/
 *.xlsx
 grades.ipynb
 *.epub
+*.jpeg
+*.txt
