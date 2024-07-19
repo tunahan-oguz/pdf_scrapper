@@ -5,6 +5,10 @@ import torchvision.models as models
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import numpy as np
+import transformers
+
+# TODO implement a transformer model with good embeddings, and train it with the noisy data again 
+# TODO CLEAN THE DATA!!!
 
 def l2norm(X):
     """L2-normalize columns of X

@@ -15,7 +15,8 @@ class AnatomDataset(data.Dataset):
     Dataset loader for Flickr30k and Flickr8k full datasets.
     """
 
-    def __init__(self, root, split, vocab, transform=IMAGE_TRANSFORMS):
+    def __init__(self, root, split, vocab, transform=IMAGE_TRANSFORMS,
+                 desc_set = "Description", ref_r = 0.0):
         self.root = root
         self.vocab = vocab
         self.split = split
@@ -23,7 +24,8 @@ class AnatomDataset(data.Dataset):
         self.dataset = pd.concat([pd.read_csv(os.path.join(root, csv_file)) for csv_file in os.listdir(root)], ignore_index=True)
         self.ids = []
         self.dataset = self.dataset[self.dataset['split'] == split].reset_index().drop(columns=['index'])
-        
+        self.desc_set = desc_set
+        self.ref_r = ref_r
 
     def __getitem__(self, index):
         """This function returns a tuple that is further passed to collate_fn
@@ -34,8 +36,13 @@ class AnatomDataset(data.Dataset):
         if self.transform is not None:
             image = self.transform(image)
 
-        
-        caption = self.dataset['Description'][index]
+        r = np.random.random()
+        caption = self.dataset[self.desc_set][index]
+        if r < self.ref_r:
+            # give the reference sentence as the caption
+            refs = eval(self.dataset['Reference'][index])
+            caption = refs[np.random.randint(0, len(refs))] if refs else caption
+            
         # Convert caption (string) to word ids.
         tokens = nltk.tokenize.word_tokenize(
             str(caption).lower())

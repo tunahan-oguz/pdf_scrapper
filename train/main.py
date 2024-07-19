@@ -10,7 +10,7 @@ from hydra.utils import to_absolute_path
 from train.dataset import AnatomDataset
 from train.image_transform import IMAGE_TRANSFORMS
 from train.loss import ContrastiveLoss
-from train.model.VSE import VSE
+import train.model as models
 from train.embed.vocab import Vocabulary
 import train.eval as eval
 import tqdm
@@ -19,9 +19,11 @@ import torch
 
 
 __arch__ = {
-    "VSE": VSE,
+    "VSE": models.VSE.VSE,
 }
 __rundir__ = "./run"
+
+
 
 cfg = None
 
@@ -39,9 +41,9 @@ def train_one(model, loader, criterion, optim, scheduler, logger):
         optim.zero_grad()
  
         im = im.cuda(); text = text.cuda()
-        outs = model(im, text, lens)
+        img_emb, cap_emb = model(im, text, lens)
  
-        loss = criterion(*outs) # contrastive
+        loss = criterion(img_emb, cap_emb) # contrastive
         loss.backward()
         optim.step()
         accumulated_loss += loss.item()
@@ -55,8 +57,6 @@ def train_one(model, loader, criterion, optim, scheduler, logger):
                 }
             })
             accumulated_loss = 0
-    model.zero_grad()
-    optim.zero_grad()
     scheduler.step()
 
     
@@ -64,8 +64,8 @@ def validate(model, loader, logger, measure='cosine'):
     model.eval()
     
     img_embs, cap_embs = eval.encode_data(model, loader, log_step=10)
-    (r1, r5, r10, medr, meanr) = eval.i2t(img_embs, cap_embs, measure=measure)
-    (r1i, r5i, r10i, medri, meanri) = eval.t2i(img_embs, cap_embs, measure=measure)
+    (r1, r5, r10,) = eval.i2t(img_embs, cap_embs, measure=measure)
+    (r1i, r5i, r10i) = eval.t2i(img_embs, cap_embs, measure=measure)
 
     logger.log({
         "validation":
@@ -94,14 +94,42 @@ def model_selection(model : torch.nn.Module, r1):
         max_r1 = r1
         print(f"Best model saved to {os.path.join(__rundir__, wandb.run.name)}")
 
-def loop(epochs, model, train_loader, criterion, optim, scheduler, logger, val_loader):
+def test(model : torch.nn.Module, test_loader, logger):
+    global cfg
+    global __rundir__
+    weights = torch.load(os.path.join(__rundir__, wandb.run.name, "best.pth"))
+    model.eval()
+    model.load_state_dict(weights)
+    
+    img_embs, cap_embs = eval.encode_data(model, test_loader, log_step=10)
+    (r1, r5, r10) = eval.i2t(img_embs, cap_embs, measure=cfg.sim_measure)
+    (r1i, r5i, r10i) = eval.t2i(img_embs, cap_embs, measure=cfg.sim_measure)
+
+    logger.log({
+        "test":
+        {
+            f"i2t-Recall@1": r1,
+            f"i2t-Recall@5": r5,
+            f"i2t-Recall@10": r10,
+        }
+    })
+    logger.log({
+        "test":
+        { 
+            f"t2i-Recall@1": r1i,
+            f"t2i-Recall@5": r5i,
+            f"t2i-Recall@10": r10i,
+        }    
+})
+
+def loop(epochs, model, train_loader, criterion, optim, scheduler, logger, val_loader, test_loader):
     global cfg
     for e in range(epochs):
         print(f"[TRAIN: {e}]")
         train_one(model, train_loader, criterion, optim, scheduler, logger)
         print(f"[VAL: {e}]")
         validate(model, val_loader, logger, measure=cfg.sim_measure)
-
+    test(model, test_loader, logger)
 
 @hydra.main(version_base=None, config_path="configs", config_name="vse")
 def main(config: DictConfig):
@@ -113,16 +141,8 @@ def main(config: DictConfig):
     with open(vocab_path, 'rb') as f:
         vocab = pickle.load(f)
     # Update model parameters with vocab size
-    model_params = {
-        "embed_size": config.model.embed_size,
-        "finetune": config.model.finetune,
-        "cnn_type": config.model.cnn_type,
-        "use_abs": config.model.use_abs,
-        "no_imgnorm": config.model.no_imgnorm,
-        "vocab_size": len(vocab),
-        "word_dim": config.model.word_dim,
-        "num_layers": config.model.num_layers
-    }
+    model_params = dict(config.model)
+    model_params["vocab_size"] = len(vocab)
 
     EPOCH = config.training.epoch
     # Initialize model, optimizer, and criterion
@@ -133,9 +153,9 @@ def main(config: DictConfig):
 
     # Create datasets and dataloaders
     dataset_root = to_absolute_path(config.paths.dataset_root)
-    train_dataset = AnatomDataset(root=dataset_root, split="train", vocab=vocab, transform=IMAGE_TRANSFORMS)
-    valid_dataset = AnatomDataset(root=dataset_root, split="valid", vocab=vocab, transform=IMAGE_TRANSFORMS)
-    test_dataset = AnatomDataset(root=dataset_root, split="test", vocab=vocab, transform=IMAGE_TRANSFORMS)
+    train_dataset = AnatomDataset(root=dataset_root, split="train", vocab=vocab, transform=IMAGE_TRANSFORMS, desc_set=cfg.desc_set, ref_r=config.ref_inclusion.train)
+    valid_dataset = AnatomDataset(root=dataset_root, split="valid", vocab=vocab, transform=IMAGE_TRANSFORMS, desc_set=cfg.desc_set, ref_r=config.ref_inclusion.val)
+    test_dataset = AnatomDataset(root=dataset_root, split="test", vocab=vocab, transform=IMAGE_TRANSFORMS, desc_set=cfg.desc_set, ref_r=config.ref_inclusion.test)
 
     train_dataloader = data.DataLoader(
         dataset=train_dataset, 
@@ -175,7 +195,7 @@ def main(config: DictConfig):
     os.makedirs(os.path.join(__rundir__, wandb.run.name), exist_ok=True)
     OmegaConf.save(config, os.path.join(__rundir__, wandb.run.name, "config.yaml"))
     
-    loop(EPOCH, model, train_dataloader, criterion, optim, scheduler, logger, valid_dataloader)
+    loop(EPOCH, model, train_dataloader, criterion, optim, scheduler, logger, valid_dataloader, test_dataloader)
 
     wandb.run.finish()
 
