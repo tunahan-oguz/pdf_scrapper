@@ -5,11 +5,12 @@ import pickle
 from collections import Counter
 import argparse
 import os
+import itertools
 
 
 class Vocabulary(object):
     """Simple vocabulary wrapper."""
-
+    # TODO ADD THE WORDS IN REFS TOO
     def __init__(self):
         self.word2idx = {}
         self.idx2word = {}
@@ -29,8 +30,14 @@ class Vocabulary(object):
     def __len__(self):
         return len(self.word2idx)
 
-
+INCLUDE_REFS = False
 def from_csv(path):
+    global INCLUDE_REFS
+    if INCLUDE_REFS:
+        df = pd.read_csv(path)
+        descs = df['Description'].array
+        refs = list(itertools.chain(*df['Reference'].array))
+        return descs + refs
     return pd.read_csv(path)['Description'].array
 
 
@@ -66,10 +73,10 @@ def build_vocab(data_path, threshold):
 
 def main(data_path, data_name):
     vocab = build_vocab(data_path, threshold=4)
-    os.makedirs("./vocab", exist_ok=True)
-    with open('./vocab/%s_vocab.pkl' % data_name, 'wb') as f:
+    os.makedirs("./object", exist_ok=True)
+    with open('./object/%s_vocab.pkl' % data_name, 'wb') as f:
         pickle.dump(vocab, f, pickle.HIGHEST_PROTOCOL)
-    print("Saved vocabulary file to ", './vocab/%s_vocab.pkl' % data_name)
+    print("Saved vocabulary file to ", './object/%s_vocab.pkl' % data_name)
 
 
 if __name__ == '__main__':
@@ -77,4 +84,5 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', default='dataset/descriptions')
     parser.add_argument('--data_name', default='simple')
     opt = parser.parse_args()
+    INCLUDE_REFS = (opt.data_name == "simple")
     main(opt.data_path, opt.data_name)

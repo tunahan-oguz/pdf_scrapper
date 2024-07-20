@@ -1,6 +1,7 @@
 import fitz  # PyMuPDF
 from pdfminer.high_level import extract_text
 import re
+from nltk.tokenize import word_tokenize
 
 IMAGE_ROOT = "dataset/images"
 DESC_ROOT = "dataset/descriptions"
@@ -46,6 +47,10 @@ def ninedotpdf(x):
 def figdot(image_kwd : str):
     return image_kwd.lower().replace("figure", "fig.")
 
+def figdottofigure(image_kwd : str):
+    return image_kwd.lower().replace("fig.", "figure")
+
+
 FIGURE_TO_REF_FORMATS = {
     "1.pdf" : same,
     "2.pdf" : same,
@@ -60,5 +65,88 @@ FIGURE_TO_REF_FORMATS = {
     "11.pdf" : figdot,
     "12.pdf" : same,
     "13.pdf" : figdot,
-
+    "14.pdf" : same,
+    "15.pdf" : figdottofigure,
+    "16.pdf" : same,
+    "17.pdf" : same,
+    "18.pdf" : same,
+    "19.pdf" : None,
+    "20.pdf" : same,
+    "21.pdf" : figdot,
+    "22.pdf" : figdot, #INVERSE CALISTIRMAK GEREKIYOR, BROKEN DATA STREAM WHEN WRITING IMAGE FILE ERROR ATIYOR COGU IMAGEDA}
 }
+
+def match(text_blocks, image_bbox):
+    min_distance = float('inf')
+    caption_text = ""
+    image_kwd = None
+    image_center_x = (image_bbox.x0 + image_bbox.x1) / 2
+    image_center_y = (image_bbox.y0 + image_bbox.y1) / 2
+    for block in text_blocks:
+        match = PATTERN.search(block[4])
+        if match is None:
+            continue
+        if not block[4].lower().startswith(match.group(0).lower()): continue
+        block_bbox = fitz.Rect(block[:4])
+        block_center_x = (block_bbox.x0 + block_bbox.x1) / 2
+        block_center_y = (block_bbox.y0 + block_bbox.y1) / 2
+        
+        # Calculate distance from image center to block center
+        distance = ((block_center_x - image_center_x) ** 2 + (block_center_y - image_center_y) ** 2) ** 0.5
+        if block_center_y < image_center_y: continue # the caption must be below image
+        if distance < min_distance:
+            min_distance = distance
+            caption_text = block[4]
+            image_kwd = match.group(0)
+
+    if image_kwd is None:
+        return match2(text_blocks, image_bbox)
+    
+    return image_kwd, caption_text
+
+def match2(text_blocks, image_bbox):
+    min_distance = float('inf')
+    caption_text = ""
+    image_kwd = None
+    image_center_x = (image_bbox.x0 + image_bbox.x1) / 2
+    image_center_y = (image_bbox.y0 + image_bbox.y1) / 2
+    for block in text_blocks:
+        match = PATTERN.search(block[4])
+        if match is None:
+            continue
+        if not block[4].lower().startswith(match.group(0).lower()): continue
+        block_bbox = fitz.Rect(block[:4])
+        block_center_x = (block_bbox.x0 + block_bbox.x1) / 2
+        block_center_y = (block_bbox.y0 + block_bbox.y1) / 2
+        
+        # Calculate distance from image center to block center
+        distance = ((block_center_x - image_center_x) ** 2 + (block_center_y - image_center_y) ** 2) ** 0.5
+        if distance < min_distance:
+            min_distance = distance
+            caption_text = block[4]
+            image_kwd = match.group(0)
+    
+    return image_kwd, caption_text
+
+def ref_crop(ref : str, tokenizer):
+    words = tokenizer(ref)
+
+
+def tag_ref(ref : str, m):
+    while True:
+        current_m = PATTERN.search(ref)
+        if current_m is None: break
+        ref = ref.replace(current_m.group(0), "" if current_m.group(0).lower() != m.lower() else "_T_")
+    
+    words = word_tokenize(ref)
+    ref_point = -1
+    for i, w in enumerate(words):
+        if "_T_" in w:
+            ref_point = i
+            break
+    
+    if ref_point == -1:
+        return ref
+    words = [w for w in words if "_T_" not in w]
+    sent = " ".join(words[max(0, ref_point - 35) : ref_point + 15])
+    return sent

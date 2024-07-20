@@ -4,11 +4,11 @@ import torch.nn.init
 import torchvision.models as models
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-import torch.backends.cudnn as cudnn
-from torch.nn.utils.clip_grad import clip_grad_norm
 import numpy as np
-from collections import OrderedDict
-from train.loss import ContrastiveLoss
+import transformers
+
+# TODO implement a transformer model with good embeddings, and train it with the noisy data again 
+# TODO CLEAN THE DATA!!!
 
 def l2norm(X):
     """L2-normalize columns of X
@@ -153,9 +153,13 @@ class VSE(nn.Module):
                                 use_abs=use_abs)
 
 
-    def forward(self, images, captions, lengths):
+    def forward(self, images, captions, lengths, volatile=False):
         """Compute the image and caption embeddings
         """
+        # Set mini-batch dataset
+        images = Variable(images, volatile=volatile)
+        captions = Variable(captions, volatile=volatile)
+
         # Forward
         img_emb = self.img_enc(images)
         cap_emb = self.txt_enc(captions, lengths)

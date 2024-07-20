@@ -1,5 +1,7 @@
 arch: VSE
 
+sim_measure: 'cosine'
+
 model:
   embed_size: 1024
   finetune: true
@@ -13,15 +15,23 @@ training:
   batch_size: 12
   num_workers: 6
   lr: 1e-4
-  epoch: 100
+  epoch: 70
+
+desc_set: Description
 
 paths:
   dataset_root: "dataset/descriptions"
-  vocab_path: "vocab/simple_vocab.pkl"
+  vocab_path: "object/simple_vocab.pkl"
+
+ref_inclusion:
+  train: 0.5
+  val: 0.0
+  test: 0.0
 
 wandb:
   project: "NLP_PROJECT"
 
+log_step: 15
 
 
 # from train.dataset import AnatomDataset

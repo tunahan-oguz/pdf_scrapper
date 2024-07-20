@@ -12,8 +12,10 @@ from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer 
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
+import utils
 
 nltk.download('stopwords')
+nltk.download('wordnet')
 stop_words = set(stopwords.words('english'))
 
 def clean_text(text):
@@ -46,17 +48,22 @@ def lemmatize_text(text):
     lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
     return ' '.join(lemmatized_tokens)
 
+def alpha_numeric(x):
+    x = re.sub(r'[^a-zA-Z0-9 ]','', x)
+    return x
+
 
 def main():
     description_csvs = [os.path.join(DESC_ROOT, f) for f in os.listdir(DESC_ROOT) if f.endswith("csv")]
-
+    train_imgs = val_imgs = test_imgs = 0
     np.random.seed(13)
     for csv in description_csvs:
         df = pd.read_csv(csv)
-        figures = [PATTERN.search(cap).group(0) for cap in df['Description']]
-        descs = [cap.replace(fg, "") for fg, cap in zip(figures, df['Description'])]
+
+        descs = [cap.replace(PATTERN.search(cap).group(0), "") for cap in df['Description']]
 
         clean_sentences = [re.sub(r'\s+', ' ', sentence.strip()) for sentence in descs]
+        # TODO remove all punctuations
         df['Description'] = clean_sentences
 
         # for idx, sentence in enumerate(clean_sentences, 1):
@@ -65,9 +72,23 @@ def main():
 
         refs = [eval(r) for r in df['Reference']]
         refs = [map(lambda x:re.sub(r'\s+', ' ', x.strip()), sent_list) for sent_list in refs]
-        df['Reference'] = [list(map(lambda x:x.replace(PATTERN.search(x).group(0), "") ,group)) for group in refs]
+        tagged_refs = []
+        for idx, ref_list in enumerate(refs):
+            m = df['Match'][idx]
+            tagged_refs.append([utils.tag_ref(ref, m) for ref in ref_list])
+            
+        df['Reference'] = tagged_refs
+        df['Reference'] = df['Reference'].apply(lambda lst: [alpha_numeric(x) for x in lst])
+        df['Reference'] = df['Reference'].apply(lambda lst: [str.strip(x) for x in lst])
+
+
         
-        df['Description'] = df['Description'].replace('', np.nan)
+        df['Description'] = df['Description'].replace('', np.nan) # drop junk lines
+        df = df.dropna()
+        df['Description'] = df['Description'].apply(alpha_numeric)
+        df['Description'] = df['Description'].apply(str.strip)
+
+
         df['Cleaned_Description'] = df['Description'].apply(clean_text)
         df['Lemmatized_Description'] = df['Cleaned_Description'].apply(lemmatize_text)
         df['Stemmed_Description'] = df['Cleaned_Description'].apply(stem_text)
@@ -75,14 +96,16 @@ def main():
 
         ## Adjust the splits. IT IS COMPLETE RANDOM SPLIT WE MAY WANT TO PARAMETERIZE HERE TO HAVE BOOK BY BOOK SPLIT
         df['split'] = [
-                'valid' if (rand_num := np.random.random()) < 0.1 else
-                'test' if rand_num < 0.2 else
+                'valid' if (rand_num := np.random.random()) < 0.05 else
+                'test' if rand_num < 0.15 else
                 'train'
                 for _ in range(len(df))]
         df.to_csv(csv, index=False)
         print(f"Done [{csv}]...")
-
-        """
-        Figure calls  are removed so far in this code.
-        Remove all reference words such as see, refer to, etc.
-        """
+        train_imgs += len(df[df['split'] == 'train'])
+        val_imgs += len(df[df['split'] == 'valid'])
+        test_imgs += len(df[df['split'] == 'test'])
+    
+    print(f"# of train images = {train_imgs}")
+    print(f"# of validation images = {val_imgs}")
+    print(f"# of test images = {test_imgs}")
