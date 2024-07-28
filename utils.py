@@ -148,5 +148,5 @@ def tag_ref(ref : str, m):
     if ref_point == -1:
         return ref
     words = [w for w in words if "_T_" not in w]
-    sent = " ".join(words[max(0, ref_point - 35) : ref_point + 15])
-    return sent
+    sent = " ".join(words[max(0, ref_point - 7) : ref_point + 7])
+    return sent.strip()
