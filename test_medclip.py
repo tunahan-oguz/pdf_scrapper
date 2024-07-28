@@ -4,7 +4,7 @@ from train.dataset import MedClipDataset
 from torch.utils.data import DataLoader
 import tqdm
 
-model_path = "only_captions/med_clip.bin"
+model_path = "ref75/med_clip.bin"
 state_dict = torch.load(model_path)
 
 model = MedCLIPModel(vision_cls=MedCLIPVisionModelViT)
@@ -13,7 +13,7 @@ model.cuda()
 model.eval()
 
 
-test_dataset = MedClipDataset('DATASET2.csv', 'test')
+test_dataset = MedClipDataset('DATASET.csv', 'test')
 loader = DataLoader(test_dataset, batch_size=18, collate_fn=MedClipDataset.collate_fn)
 at1 = at5 = at10 = 0
 

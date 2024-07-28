@@ -100,7 +100,7 @@ class MainWindow(QMainWindow):
     def load_image(self):
         if self.image_paths:
 
-            pixmap = QPixmap(self.image_paths[self.current_image_index][0])
+            pixmap = QPixmap(self.image_paths[self.current_image_index])
             self.image_label.setPixmap(pixmap.scaled(self.image_label.size(), Qt.AspectRatioMode.KeepAspectRatio))
 
     def show_previous_image(self):

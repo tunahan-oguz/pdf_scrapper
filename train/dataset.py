@@ -133,6 +133,10 @@ class MedClipDataset(data.Dataset):
     def __len__(self):
         return len(self.dataset)
     
+    def __add__(self, other):
+        self.dataset = pd.concat([self.dataset, other.dataset]).reset_index().drop(columns=['Unnamed: 0'])
+        return self
+    
     @staticmethod
     def collate_fn(data):
         """Build mini-batch tensors from a list of (image, caption) tuples.
