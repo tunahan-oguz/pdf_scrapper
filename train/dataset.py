@@ -128,7 +128,7 @@ class MedClipDataset(data.Dataset):
             refs = eval(self.dataset['Reference'][index]) if isinstance(self.dataset['Reference'][index], str) else self.dataset['Reference'][index]
             caption = refs[np.random.randint(0, len(refs))] if refs else caption
             
-        return {"img": image, "caption": caption}
+        return {"img": image, "caption": caption,"path":self.dataset['Image'][index]}
 
     def __len__(self):
         return len(self.dataset)
@@ -148,6 +148,7 @@ class MedClipDataset(data.Dataset):
         """
         images = [d['img'] for d in data]
         texts = [d['caption'] for d in data]
+        paths = [d['path'] for d in data]
         processed_batch =  MedClipDataset.processor(
             text=texts, 
             images=images, 
@@ -156,6 +157,6 @@ class MedClipDataset(data.Dataset):
         )
         processed_batch['return_loss'] = MedClipDataset.train
         processed_batch['original_text'] = texts
-
+        processed_batch['path'] = paths
         return processed_batch
     
