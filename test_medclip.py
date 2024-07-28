@@ -13,7 +13,7 @@ model.cuda()
 model.eval()
 
 
-test_dataset = MedClipDataset('dataset/descriptions', 'test')
+test_dataset = MedClipDataset('DATASET2.csv', 'test')
 loader = DataLoader(test_dataset, batch_size=18, collate_fn=MedClipDataset.collate_fn)
 at1 = at5 = at10 = 0
 
